@@ -5,7 +5,6 @@ import {
   Modal,
   TouchableOpacity,
   Image,
-  ScrollView,
   Dimensions,
   Animated,
   PanResponder,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Restaurant, FilterMap } from '../types';
+import { getRestaurantStatus } from '../api/restaurants';
 
 const { height: SCREEN_HEIGHT} = Dimensions.get('window');
 const MODAL_HEIGHT = SCREEN_HEIGHT * 0.7;
@@ -77,7 +77,6 @@ const RestaurantDetailModal = ({ visible, restaurant, onClose, filters }: Restau
               }).start(resolve);
             }),
           ]);
-          console.log('Modal opened successfully');
         } catch (error) {
           console.error('Animation error:', error);
         }
@@ -90,6 +89,24 @@ const RestaurantDetailModal = ({ visible, restaurant, onClose, filters }: Restau
 
     openModal();
   }, [visible]);
+
+  useEffect(() => {
+    const getOpenStatus = async () => {
+      try {
+        const response = await getRestaurantStatus(restaurant.id)
+        if (typeof response === "string") {
+          restaurant.isOpen = undefined;
+          return
+        }
+        restaurant.isOpen = response.is_currently_open
+      } catch {
+        console.log("Failed to fetch restaurants status")
+      }
+    }
+
+    getOpenStatus()
+  },[])
+
 
 
   const closeModal = () => {
@@ -124,8 +141,6 @@ const RestaurantDetailModal = ({ visible, restaurant, onClose, filters }: Restau
       )
     : restaurant.image_url;
 
-
-
   if (!isVisible) return null;
 
   return (
@@ -134,11 +149,12 @@ const RestaurantDetailModal = ({ visible, restaurant, onClose, filters }: Restau
       visible={isVisible}
       animationType="none"
       onRequestClose={closeModal}
+      statusBarTranslucent={true}
     >
+      <StatusBar hidden />
       <View className="flex-1 justify-end">
-        {/* Background overlay */}
         <Animated.View 
-          className="absolute inset-0 bg-black/50"
+          className="absolute inset-0"
           style={{ opacity: fadeAnim }}
         >
           <TouchableOpacity 
@@ -148,9 +164,8 @@ const RestaurantDetailModal = ({ visible, restaurant, onClose, filters }: Restau
           />
         </Animated.View>
 
-        {/* Modal content */}
         <Animated.View 
-          className="absolute left-0 right-0 bg-white rounded-t-3xl overflow-hidden shadow-lg"
+          className="absolute left-0 right-0 bg-white rounded-t-3xl"
           style={{
             transform: [{ translateY: slideAnim }],
             height: MODAL_HEIGHT + IMAGE_HEIGHT,
@@ -158,102 +173,53 @@ const RestaurantDetailModal = ({ visible, restaurant, onClose, filters }: Restau
           }}
           {...panResponder.panHandlers}
         >
-          {/* Drag handle */}
-          <View className="items-center pt-2.5 pb-1 absolute top-0 left-0 right-0 z-10">
+          <View className="items-center pt-2.5 pb-1 absolute top-0 left-0 right-0 z-20">
             <View className="w-10 h-1 bg-gray-300 rounded-full" />
           </View>
-
-          {/* Image section - 1/3 of screen */}
           <View className="relative w-full" style={{ height: IMAGE_HEIGHT }}>
-            {imagePath ? (
-              <Image 
-                source={{ uri: imagePath }}
-                className="w-full h-full"
-                resizeMode="cover"
-              />
-            ) : (
-              <View className="w-full h-full bg-gray-100 items-center justify-center">
-                <Ionicons name="restaurant-outline" size={60} color="#ccc" />
-              </View>
-            )}
+            <Image 
+              source={{ uri: imagePath }}
+              className="w-full h-full"
+              resizeMode="cover"
+            />
             
-            {/* Close button */}
             <TouchableOpacity 
-              className="absolute top-5 right-5 z-10"
+              className="absolute top-12 left-5 z-10 p-2"
               onPress={closeModal}
             >
-              <Ionicons name="close-circle" size={32} color="black" />
+              <Ionicons name="chevron-down" size={24} color="#1F2B2E" />
             </TouchableOpacity>
-
-            {/* Restaurant name overlay on image */}
-            <View className="absolute bottom-0 left-0 right-0 p-5 bg-black/30">
-              <Text className="text-2xl font-bold text-white">
-                {restaurant?.name || 'Restaurant'}
-              </Text>
-            </View>
           </View>
 
-          {/* Content section - 50% of screen with margin */}
-          <ScrollView 
-            className="flex-1"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20 }}
+          <View 
+            className="absolute left-5 right-5 bg-white rounded-3xl p-5 flex gap-2"
+            style={{
+              top: IMAGE_HEIGHT - 30,
+              zIndex: 10,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 20,
+              elevation: 10,
+            }}
           >
-            <View className="mt-2.5">
-              {/* Restaurant info */}
-              <View className="mb-5">
-                <View className="flex-row items-center mb-3">
-                  <Ionicons name="star" size={20} color="#FFB800" />
-                  <Text className="text-base font-bold ml-1 mr-2">
-                    {restaurant?.rating || '4.5'} ★
-                  </Text>
-                </View>
-        
-                <Text className="text-gray-700">
-                  {restaurant?.filterIds?.map((filterId, index) => (
-                    <React.Fragment key={filterId}>
-                      {index !== 0 && " • "}
-                      {filters[filterId]?.name}
-                    </React.Fragment>
-                  ))}
-                </Text>   
+            <Text className="text-headline1 text-dark-text">
+              {restaurant?.name || 'Restaurant'}
+            </Text>
 
-                <View className="flex-row items-center mb-2">
-                  <Ionicons name="time-outline" size={18} color="#666" />
-                  <Text className="text-sm text-gray-500 ml-2">
-                    {restaurant?.delivery_time_minutes || '25-35 min'} • Free delivery
-                  </Text>
-                </View>
+            <Text className="text-subtitle mt-1">
+              {restaurant?.filterIds?.map((filterId, index) => (
+                <React.Fragment key={filterId}>
+                  {index !== 0 && " • "}
+                  {filters[filterId]?.name}
+                </React.Fragment>
+              ))}
+            </Text>   
 
-                <View className="flex-row items-center mb-2">
-                  <Ionicons name="location-outline" size={18} color="#666" />
-                </View>
-
-                <View className="flex-row items-center">
-                  <Ionicons name="call-outline" size={18} color="#666" />
-                </View>
-              </View>
-
-
-              {/* Menu or additional info */}
-              <View className="mb-5">
-                <Text className="text-lg font-bold mb-2.5 text-black">Popular Items</Text>
-              </View>
-
-              {/* Action buttons */}
-              <View className="flex-row mt-2.5 mb-2.5">
-                <TouchableOpacity className="flex-1 bg-red-500 rounded-xl py-4 items-center mr-3">
-                  <Text className="text-white text-base font-bold">Order Now</Text>
-                </TouchableOpacity>
-                <TouchableOpacity className="w-14 h-14 rounded-xl bg-gray-100 items-center justify-center">
-                  <Ionicons name="heart-outline" size={24} color="#FF4B4B" />
-                </TouchableOpacity>
-              </View>
-
-              {/* Bottom spacing */}
-              <View className="h-5" />
-            </View>
-          </ScrollView>
+            <Text className={`text-title2 mt-2 ${restaurant.isOpen ? "text-positive" : "text-negative"}`}>
+              {restaurant.isOpen ? "Open" : "Closed"}
+            </Text>
+          </View>
         </Animated.View>
       </View>
     </Modal>

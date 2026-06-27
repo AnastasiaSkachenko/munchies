@@ -1,3 +1,56 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  .typography {
+    font-style: normal;
+    letter-spacing: 0%;
+    vertical-align: middle;
+  }
+}
+
+@layer components {
+  .text-title1 {
+    @apply typography;
+    font-family: Helvetica;
+    font-weight: 400;
+    font-size: 18px;
+  }
+  
+  .text-title2 {
+    @apply typography;
+    font-family: Poppins;
+    font-weight: 500;
+    font-size: 14px;
+  }
+  
+  .text-subtitle1 {
+    @apply typography;
+    font-family: Helvetica;
+    font-weight: 700;
+    font-size: 12px;
+  }
+  
+  .text-footer1 {
+    @apply typography;
+    font-family: Inter;
+    font-weight: 500;
+    font-size: 10px;
+    line-height: 100%;
+  }
+  
+  .text-headline1 {
+    @apply typography;
+    font-family: Helvetica;
+    font-weight: 400;
+    font-size: 24px;
+  }
+  
+  .text-headline2 {
+    @apply typography;
+    font-family: Helvetica;
+    font-weight: 700;
+    font-size: 32px;
+  }
+}

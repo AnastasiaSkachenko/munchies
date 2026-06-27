@@ -12,7 +12,8 @@ export interface Restaurant {
     rating: number,
     filterIds: string[],
     image_url: string,
-    delivery_time_minutes: number
+    delivery_time_minutes: number,
+    isOpen?: boolean
 }
 
 export type isOpenResponse =

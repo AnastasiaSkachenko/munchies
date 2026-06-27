@@ -55,9 +55,10 @@ export const useRestaurants = () => {
   const filteredRestaurants = selectedFilters.length === 0
     ? restaurants
     : restaurants.filter(restaurant =>
-        restaurant.filterIds.some(filterId => selectedFilters.includes(filterId))
+        selectedFilters.every(filterId => 
+          restaurant.filterIds.includes(filterId)
+        )
       );
-
   return {
     restaurants: filteredRestaurants,
     allRestaurants: restaurants,
